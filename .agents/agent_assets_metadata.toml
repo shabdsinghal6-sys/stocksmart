@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "DLAHs-o_T9Oru0z4Rhjpe"
+uri = "file://stocksmart.tar.gz"
+type = "unspecified"
+title = "StockSmart — Source Code"

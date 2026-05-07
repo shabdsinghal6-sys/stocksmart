@@ -1,0 +1,417 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Digital Inventory Keeper API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: products
+    description: Product inventory management
+  - name: movements
+    description: Stock movement history
+  - name: dashboard
+    description: Dashboard summary and analytics
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List all products
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: lowStock
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+    put:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductInput"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Product deleted
+
+  /products/{id}/adjust:
+    post:
+      operationId: adjustStock
+      tags: [products]
+      summary: Adjust stock quantity for a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustStockInput"
+      responses:
+        "200":
+          description: Stock adjusted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /movements:
+    get:
+      operationId: listMovements
+      tags: [movements]
+      summary: List stock movements
+      parameters:
+        - name: productId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [in, out, adjustment]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of stock movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Movement"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [products]
+      summary: List all distinct categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        unit:
+          type: string
+        quantity:
+          type: number
+        minThreshold:
+          type: number
+        costPrice:
+          type: number
+          nullable: true
+        sellingPrice:
+          type: number
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - category
+        - unit
+        - quantity
+        - minThreshold
+        - createdAt
+        - updatedAt
+
+    CreateProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        unit:
+          type: string
+        quantity:
+          type: number
+        minThreshold:
+          type: number
+        costPrice:
+          type: number
+          nullable: true
+        sellingPrice:
+          type: number
+          nullable: true
+        description:
+          type: string
+          nullable: true
+      required:
+        - name
+        - category
+        - unit
+        - quantity
+        - minThreshold
+
+    UpdateProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        unit:
+          type: string
+        quantity:
+          type: number
+        minThreshold:
+          type: number
+        costPrice:
+          type: number
+          nullable: true
+        sellingPrice:
+          type: number
+          nullable: true
+        description:
+          type: string
+          nullable: true
+
+    AdjustStockInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [in, out, adjustment]
+        quantity:
+          type: number
+        note:
+          type: string
+          nullable: true
+      required:
+        - type
+        - quantity
+
+    Movement:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        type:
+          type: string
+          enum: [in, out, adjustment]
+        quantity:
+          type: number
+        quantityBefore:
+          type: number
+        quantityAfter:
+          type: number
+        note:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - productId
+        - productName
+        - type
+        - quantity
+        - quantityBefore
+        - quantityAfter
+        - createdAt
+
+    DashboardStats:
+      type: object
+      properties:
+        totalProducts:
+          type: integer
+        lowStockCount:
+          type: integer
+        outOfStockCount:
+          type: integer
+        totalCategories:
+          type: integer
+        recentMovements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Movement"
+        categoryBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryStat"
+        topLowStockProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+      required:
+        - totalProducts
+        - lowStockCount
+        - outOfStockCount
+        - totalCategories
+        - recentMovements
+        - categoryBreakdown
+        - topLowStockProducts
+
+    CategoryStat:
+      type: object
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+        lowStockCount:
+          type: integer
+      required:
+        - category
+        - count
+        - lowStockCount
